@@ -76,9 +76,9 @@
     {
       owner   = "terraform-providers";
       repo    = "terraform-provider-aws";
-      rev     = "v2.65.0";
-      version = "2.65.0";
-      sha256  = "005vs1qd6payicxldc9lr4w6kzr58xw9b930j52g1q7hlddl5mbb";
+      rev     = "v3.7.0";
+      version = "3.7.0";
+      sha256  = "0xvy6mh5hsm4zsg2njjci78ld47znrxj1jzz4iy1sn007zv6anpy";
     };
   azuread =
     {
