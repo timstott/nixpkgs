@@ -1,4 +1,5 @@
 { lib
+, buildGoModule
 , buildGoPackage
 , fetchFromGitHub
 , callPackage
@@ -6,6 +7,25 @@
 }:
 let
   list = lib.importJSON ./providers.json;
+
+  toDrvGoMod = name: data:
+    buildGoModule {
+      pname = data.repo;
+      version = data.version;
+
+      subPackages = [ "." ];
+
+      src = fetchFromGitHub {
+        inherit (data) owner repo rev sha256;
+      };
+
+      vendorSha256 = "06cf91jd3dp2ap5vr8ff4w6nf168d8jm6wc86kjjan4cyhhp65cs";
+
+      # Terraform allow checking the provider versions, but this breaks
+      # if the versions are not provided via file paths.
+      postBuild = "mv $NIX_BUILD_TOP/go/bin/${data.repo}{,_v${data.version}}";
+      passthru = data;
+    };
 
   toDrv = name: data:
     buildGoPackage {
@@ -50,10 +70,11 @@ let
     });
 
   # These providers are managed with the ./update-all script
-  automated-providers = lib.mapAttrs (toDrv) list;
+  automated-providers = lib.mapAttrs (toDrv) (builtins.removeAttrs list [ "aws"]);
 
   # These are the providers that don't fall in line with the default model
   special-providers = {
+    aws = toDrvGoMod "aws" list.aws;
     # Override providers that use Go modules + vendor/ folder
     google = patchGoModVendor automated-providers.google;
     google-beta = patchGoModVendor automated-providers.google-beta;
