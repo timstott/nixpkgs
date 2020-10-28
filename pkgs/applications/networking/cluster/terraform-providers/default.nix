@@ -70,7 +70,7 @@ let
     });
 
   # These providers are managed with the ./update-all script
-  automated-providers = lib.mapAttrs (toDrv) (builtins.removeAttrs list [ "aws" "tls"]);
+  automated-providers = lib.mapAttrs (toDrv) (builtins.removeAttrs list [ "aws" "tls" "vultr"]);
 
   # These are the providers that don't fall in line with the default model
   special-providers = {
@@ -164,15 +164,7 @@ let
 
     tls = toDrvGoMod "tls" list.tls;
 
-    # provider was moved to the `vultr` organization, but kept the old references:
-    # https://github.com/vultr/terraform-provider-vultr/pull/67
-    # this override should be removed as soon as new version (>1.4.1) is released.
-    vultr = automated-providers.vultr.overrideAttrs (attrs: {
-      prePatch = attrs.prePatch or "" + ''
-        substituteInPlace go.mod --replace terraform-providers/terraform-provider-vultr vultr/terraform-provider-vultr
-        substituteInPlace main.go --replace terraform-providers/terraform-provider-vultr vultr/terraform-provider-vultr
-      '';
-    });
+    vultr = toDrvGoMod "vultr" list.vultr;
 
     # Packages that don't fit the default model
     ansible = callPackage ./ansible {};
