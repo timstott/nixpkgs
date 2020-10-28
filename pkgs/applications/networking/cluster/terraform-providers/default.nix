@@ -19,7 +19,7 @@ let
         inherit (data) owner repo rev sha256;
       };
 
-      vendorSha256 = "06cf91jd3dp2ap5vr8ff4w6nf168d8jm6wc86kjjan4cyhhp65cs";
+      vendorSha256 = data.vendorSha256;
 
       # Terraform allow checking the provider versions, but this breaks
       # if the versions are not provided via file paths.

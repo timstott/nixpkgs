@@ -71,6 +71,7 @@
     "repo": "terraform-provider-aws",
     "rev": "v3.12.0",
     "sha256": "0b51mfgqccvvi53m72wgiq8pcsg31nak0bjlfny70s4lqq7w98lz",
+    "vendorSha256": "06cf91jd3dp2ap5vr8ff4w6nf168d8jm6wc86kjjan4cyhhp65cs",
     "version": "3.12.0"
   },
   "azuread": {
