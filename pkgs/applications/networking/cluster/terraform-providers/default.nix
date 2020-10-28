@@ -70,7 +70,7 @@ let
     });
 
   # These providers are managed with the ./update-all script
-  automated-providers = lib.mapAttrs (toDrv) (builtins.removeAttrs list [ "aws"]);
+  automated-providers = lib.mapAttrs (toDrv) (builtins.removeAttrs list [ "aws" "tls"]);
 
   # These are the providers that don't fall in line with the default model
   special-providers = {
@@ -162,13 +162,7 @@ let
       '';
     });
 
-    # https://github.com/hashicorp/terraform-provider-tls/pull/71
-    tls = automated-providers.tls.overrideAttrs (attrs: {
-      prePatch = attrs.prePatch or "" + ''
-        substituteInPlace go.mod --replace terraform-providers/terraform-provider-tls hashicorp/terraform-provider-tls
-        substituteInPlace main.go --replace terraform-providers/terraform-provider-tls hashicorp/terraform-provider-tls
-      '';
-    });
+    tls = toDrvGoMod "tls" list.tls;
 
     # provider was moved to the `vultr` organization, but kept the old references:
     # https://github.com/vultr/terraform-provider-vultr/pull/67
