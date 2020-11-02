@@ -19,12 +19,13 @@ let
         inherit (data) owner repo rev sha256;
       };
 
-      vendorSha256 = data.vendorSha256;
+      vendorSha256 = data.vendorSha256 or null;
 
       # Terraform allow checking the provider versions, but this breaks
       # if the versions are not provided via file paths.
       postBuild = "mv $NIX_BUILD_TOP/go/bin/${data.repo}{,_v${data.version}}";
       passthru = data;
+
     };
 
   toDrv = name: data:
@@ -70,7 +71,7 @@ let
     });
 
   # These providers are managed with the ./update-all script
-  automated-providers = lib.mapAttrs (toDrv) (builtins.removeAttrs list [ "aws" "tls" "vultr"]);
+  automated-providers = lib.mapAttrs (toDrvGoMod) (builtins.removeAttrs list [ "aws" "tls" "vultr"]);
 
   # These are the providers that don't fall in line with the default model
   special-providers = {
@@ -80,11 +81,25 @@ let
     google-beta = patchGoModVendor automated-providers.google-beta;
     ibm = patchGoModVendor automated-providers.ibm;
 
+# these derivations will be built:
+#   /nix/store/vx98zby2y45pjyw14hi7a194kj457xmb-terraform-provider-acme-1.5.0-patched.drv
+# building '/nix/store/vx98zby2y45pjyw14hi7a194kj457xmb-terraform-provider-acme-1.5.0-patched.drv'...
+# unpacking sources
+# unpacking source archive /nix/store/5ld8jb6h57a1rlfzx0z41x487bc91jck-source
+# source root is source
+# patching sources
+# configuring
+# building
+# Building subPackage ./.
+# go: inconsistent vendoring in /build/source:
+#         golang.org/x/net@v0.0.0-20200904194848-62affa334b73: is explicitly required in go.mod, but vendor/modules.txt indicates golang.org/x/net@v0.0.0-20190930134127-c5a3c61f89f3
+#         golang.org/x/sys@v0.0.0-20200918174421-af09f7315aff: is explicitly required in go.mod, but vendor/modules.txt indicates golang.org/x/sys@v0.0.0-20190801041406-cbf593c0f2f3
+
+# run 'go mod vendor' to sync, or use -mod=mod or -mod=readonly to ignore the vendor directory
+# builder for '/nix/store/vx98zby2y45pjyw14hi7a194kj457xmb-terraform-provider-acme-1.5.0-patched.drv' failed with exit code 1
+# error: build of '/nix/store/vx98zby2y45pjyw14hi7a194kj457xmb-terraform-provider-acme-1.5.0-patched.drv' failed
     acme = automated-providers.acme.overrideAttrs (attrs: {
-      prePatch = attrs.prePatch or "" + ''
-        substituteInPlace go.mod --replace terraform-providers/terraform-provider-acme getstackhead/terraform-provider-acme
-        substituteInPlace main.go --replace terraform-providers/terraform-provider-acme getstackhead/terraform-provider-acme
-      '';
+      deleteVendor = true;
     });
 
     # providers that were moved to the `hashicorp` organization,
