@@ -8,27 +8,23 @@
 let
   list = lib.importJSON ./providers.json;
 
-  toDrvGoMod = name: data:
+  buildWithGoModule = name: data:
     buildGoModule {
       pname = data.repo;
       version = data.version;
-
       subPackages = [ "." ];
-
       src = fetchFromGitHub {
         inherit (data) owner repo rev sha256;
       };
-
       vendorSha256 = data.vendorSha256 or null;
 
       # Terraform allow checking the provider versions, but this breaks
       # if the versions are not provided via file paths.
       postBuild = "mv $NIX_BUILD_TOP/go/bin/${data.repo}{,_v${data.version}}";
       passthru = data;
-
     };
 
-  toDrv = name: data:
+  buildWithGoPackage = name: data:
     buildGoPackage {
       pname = data.repo;
       version = data.version;
@@ -71,11 +67,14 @@ let
     });
 
   # These providers are managed with the ./update-all script
-  automated-providers = lib.mapAttrs (toDrvGoMod) (builtins.removeAttrs list [ "aws" "tls" "vultr"]);
+  automated-providers = lib.mapAttrs (name: attrs:
+    if attrs ? vendorSha256
+    then buildWithGoModule name attrs
+    else buildWithGoPackage name attrs
+  ) list;
 
   # These are the providers that don't fall in line with the default model
   special-providers = {
-    aws = toDrvGoMod "aws" list.aws;
     # Override providers that use Go modules + vendor/ folder
     google = patchGoModVendor automated-providers.google;
     google-beta = patchGoModVendor automated-providers.google-beta;
@@ -176,10 +175,6 @@ let
         substituteInPlace main.go --replace terraform-providers/terraform-provider-template hashicorp/terraform-provider-template
       '';
     });
-
-    tls = toDrvGoMod "tls" list.tls;
-
-    vultr = toDrvGoMod "vultr" list.vultr;
 
     # Packages that don't fit the default model
     ansible = callPackage ./ansible {};
